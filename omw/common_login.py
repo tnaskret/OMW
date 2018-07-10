@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import sqlite3, datetime
+import datetime
 from flask import Flask, current_app, url_for
 from flask_login import LoginManager, UserMixin, login_required, login_user, logout_user, current_user, wraps
 from itsdangerous import URLSafeTimedSerializer # for safe session cookies

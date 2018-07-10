@@ -1,5 +1,4 @@
 import sqlite3
-import sys
 
 dbfile = "omw.db"
 con = sqlite3.connect(dbfile)

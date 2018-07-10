@@ -4,7 +4,7 @@
 import os, sys, re, sqlite3, datetime
 from flask import Flask, current_app
 from flask import render_template, g, request, redirect, url_for, send_from_directory, session, flash
-import urllib, gzip, requests
+import urllib, gzip
 from werkzeug import secure_filename
 from lxml import etree
 from collections import defaultdict as dd

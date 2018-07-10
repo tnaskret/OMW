@@ -1,16 +1,15 @@
 #!/usr/bin/python3
 
-import sqlite3, sys, nltk
-from nltk.corpus import wordnet as wn
-from collections import defaultdict as dd
+import sqlite3
+import sys
 
 
 # It takes one argument: the name of the db
-if (len(sys.argv) < 2):
+if len(sys.argv) < 2:
     sys.stderr.write('You need to give the name of the DB\n')
     sys.exit(1)
 else:
-    u =  sys.argv[0]
+    u = sys.argv[0]
     dbfile = sys.argv[1]
 
 ################################################################
@@ -31,4 +30,4 @@ f.close()
 
 con.commit()
 con.close()
-sys.stderr.write('Loaded SSREL data in (%s)\n' % (dbfile))
+sys.stderr.write('Loaded SSREL data in (%s)\n' % dbfile)

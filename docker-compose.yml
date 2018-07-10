@@ -1,0 +1,11 @@
+version: '2'
+
+services:
+  website:
+    build: .
+    environment:
+      PYTHONUNBUFFERED: 'true'
+    volumes:
+      - '.:/app'
+    ports:
+      - '5000:5000'

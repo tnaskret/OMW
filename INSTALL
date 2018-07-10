@@ -6,7 +6,7 @@ install nltk (and download WN), flask, flask-login
 
 sudo apt-get install python3-flask
 #  maybe fix broken pip3  (ok in latest ubuntu)
-curl https://bootstrap.pypa.io/get-pip.py | python3  
+curl https://bootstrap.pypa.io/get-pip.py | sudo python3
 sudo pip3 install flask-login
 
 --------------------------------

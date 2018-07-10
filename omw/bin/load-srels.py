@@ -1,8 +1,7 @@
 #!/usr/bin/python3
 
-import sqlite3, sys, nltk
-from nltk.corpus import wordnet as wn
-from collections import defaultdict as dd
+import sqlite3
+import sys
 
 # It takes one argument: the name of the db
 if (len(sys.argv) < 2):

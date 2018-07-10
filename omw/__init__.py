@@ -1,16 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import os, sys, sqlite3, datetime, urllib, gzip, requests
-from time import sleep
+import datetime
 from flask import Flask, render_template, g, request, redirect, url_for, send_from_directory, session, flash, jsonify, make_response, Markup, Response
-from flask_login import LoginManager, UserMixin, login_required, login_user, logout_user, current_user, wraps
-from itsdangerous import URLSafeTimedSerializer # for safe session cookies
+from flask_login import LoginManager, UserMixin, login_required, login_user, logout_user, current_user
 from collections import defaultdict as dd
 from collections import OrderedDict as od
-from hashlib import md5
-from werkzeug import secure_filename
-from lxml import etree
+
 
 ## profiler
 #from werkzeug.contrib.profiler import ProfilerMiddleware
@@ -669,9 +665,7 @@ def src_omw(src=None, originalkey=None):
     return concepts_omw(ss)
 
 
-## show wn statistics
-##
-##
+# show wn statistics
 @app.route('/omw/src/<src>', methods=['GET', 'POST'])
 def omw_wn(src=None):
     if src:
@@ -692,6 +686,7 @@ def omw_wn(src=None):
                            pos_stats= fetch_src_id_pos_stats(src_id),
                            src_stats=fetch_src_id_stats(src_id),
                            licenses=licenses)
+
 
 @app.route('/omw/src-latex/<src>', methods=['GET', 'POST'])
 def omw_wn_latex(src=None):
@@ -736,7 +731,6 @@ def generate_cili_tsv():
     return Response(tsv, mimetype='text/tab-separated-values')
 
 
-
 @app.context_processor
 def utility_processor():
     def scale_freq(f, maxfreq=1000):
@@ -745,11 +739,6 @@ def utility_processor():
         else:
             return 100
     return dict(scale_freq=scale_freq)
-
-
-
-## show proj statistics
-#for proj in fetch_proj/
 
 
 if __name__ == '__main__':

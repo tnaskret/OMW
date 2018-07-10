@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import sys, sqlite3
 from flask import Flask, current_app, g
 from collections import defaultdict as dd
 from collections import namedtuple as nt

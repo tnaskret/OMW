@@ -3,10 +3,10 @@
 # This script loads PWN in the new OMW schema
 # It requires Python3 and NLTK3 installed
 
-import sqlite3, sys, nltk
+import sqlite3
+import sys
 from nltk.corpus import wordnet as wn
 from collections import defaultdict as dd
-
 
 ### ToDo: add antonyms as synset links (?)
 ### ToDo: examples are being loaded as synset examples, change to sense (?)
@@ -16,13 +16,10 @@ if (len(sys.argv) < 2):
     sys.stderr.write('You need to give the name of the DB\n')
     sys.exit(1)
 else:
-    u =  sys.argv[0]
+    u = sys.argv[0]
     dbfile = sys.argv[1]
 
-
 sys.stderr.write('Found ({}) as the new OMW database.\n'.format(dbfile))
-
-
 
 # Verb Frames Names per Verb_id
 vframe = dd(lambda: dd(str))
@@ -99,7 +96,6 @@ vframe['engsym'][33] = "☺ ~ V-ing"
 vframe['engsym'][34] = "It ~ that CLAUSE"
 vframe['engsym'][35] = "☖ ~ INF "
 
-
 lexnames = """0	adj.all	all adjective clusters
 1	adj.pert	relational adjectives (pertainyms)
 2	adv.all	all adverbs
@@ -153,13 +149,11 @@ for line in lexnames.split('\n'):
     lexname['eng'][lexnlst[1]] = lexnlst[2]
     lexname['id'][lexnlst[1]] = lexnlst[0]
 
-
 ################################################################
 # OPEN omw.db
 ################################################################
 con = sqlite3.connect(dbfile)
 c = con.cursor()
-
 
 ################################################################
 # GET PWN3.0-ILI ORIGINAL MAPPING
@@ -175,29 +169,25 @@ for line in f:
         ili_id = tab[0][1:].strip()
         ili_map[pwn_ss] = ili_id
 
-
-
 ################################################################
 # INSERT PROJECT / SRC / SRC_META DATA
 ################################################################
 
 c.execute("""INSERT INTO proj (code, u)
-             VALUES (?,?)""", ['pwn',u])
+             VALUES (?,?)""", ['pwn', u])
 
 c.execute("""SELECT MAX(id) FROM proj""")
 proj_id = c.fetchone()[0]
 
 sys.stderr.write('PWN was attributed ({}) as proj_id.\n'.format(proj_id))
 
-
 c.execute("""INSERT INTO src (proj_id, version, u)
-             VALUES (?,?,?)""", [proj_id,'3.0', u])
+             VALUES (?,?,?)""", [proj_id, '3.0', u])
 
 c.execute("""SELECT MAX(id) FROM src""")
 src_id = c.fetchone()[0]
 
 sys.stderr.write('PWN30 was attributed (%s) as src_id.\n' % (src_id))
-
 
 c.execute("""INSERT INTO src_meta (src_id, attr, val, u)
              VALUES (?,?,?,?)""", [src_id, 'id', 'pwn', u])
@@ -216,9 +206,6 @@ c.execute("""INSERT INTO src_meta (src_id, attr, val, u)
 
 sys.stderr.write('PWN30 meta-data was added.\n')
 
-
-
-
 ################################################################
 # INSERT (WN-EXTERNAL) RESOURCE DATA
 ################################################################
@@ -226,36 +213,29 @@ sys.stderr.write('PWN30 meta-data was added.\n')
 # FIXME!!! ADD SRC_META
 
 c.execute("""INSERT INTO resource (code, u)
-           VALUES (?,?)""", ['pwn30-lexnames',u])
+           VALUES (?,?)""", ['pwn30-lexnames', u])
 
 c.execute("""SELECT MAX(id) FROM resource""")
 lexnames_resource_id = c.fetchone()[0]
 
-
 c.execute("""INSERT INTO resource (code, u)
-           VALUES (?,?)""", ['pwn30-verbframes',u])
+           VALUES (?,?)""", ['pwn30-verbframes', u])
 
 c.execute("""SELECT MAX(id) FROM resource""")
 verbframes_resource_id = c.fetchone()[0]
-
-
-
 
 ################################################################
 # INSERT LANG DATA (CODES AND NAMES)
 ################################################################
 
 c.execute("""INSERT INTO lang (bcp47, iso639, u)
-             VALUES (?,?,?)""", ['en','eng',u])
+             VALUES (?,?,?)""", ['en', 'eng', u])
 
 c.execute("""INSERT INTO lang_name (lang_id, in_lang_id, name, u)
              VALUES (1,1,'English',?)""", [u])
 
 c.execute("""SELECT MAX(id) FROM lang""")
 lang_id = c.fetchone()[0]
-
-
-
 
 ################################################################
 # LOAD POS, SSREL, AND SREL DATA
@@ -265,22 +245,19 @@ pos_id = dict()
 c.execute("""SELECT id, tag FROM pos""")
 rows = c.fetchall()
 for r in rows:
-    pos_id[r[1]]=r[0]
+    pos_id[r[1]] = r[0]
 
 ssrel_id = dict()
 c.execute("""SELECT id, rel FROM ssrel""")
 rows = c.fetchall()
 for r in rows:
-    ssrel_id[r[1]]=r[0]
+    ssrel_id[r[1]] = r[0]
 
 srel_id = dict()
 c.execute("""SELECT id, rel FROM srel""")
 rows = c.fetchall()
 for r in rows:
-    srel_id[r[1]]=r[0]
-
-
-
+    srel_id[r[1]] = r[0]
 
 ################################################################
 # ADD ENGLISH ENTRIES
@@ -291,9 +268,11 @@ fid = dict()
 
 ss_lemma_sense_id = dict()
 
+
 def ss2of(ss):
     # FIXME!!!! 's' is getting through as the src_key on purpose!
     return "%08d-%s" % (ss.offset(), ss.pos())
+
 
 for ss in wn.all_synsets():
 
@@ -306,7 +285,7 @@ for ss in wn.all_synsets():
         c.execute("""INSERT INTO ili (id, kind_id, def, status_id,
                                       origin_src_id, src_key, u)
                      VALUES (?,?,?,?,?,?,?)
-                  """, (ili_id, kind,  ss.definition(), 1,
+                  """, (ili_id, kind, ss.definition(), 1,
                         src_id, ss2of(ss), u))
 
     else:
@@ -315,16 +294,13 @@ for ss in wn.all_synsets():
         c.execute("""INSERT INTO ili (id, kind_id, def, status_id,
                                       origin_src_id, src_key, u)
                      VALUES (?,?,?,?,?,?,?)
-                  """, (ili_id, kind,  ss.definition(), 1,
+                  """, (ili_id, kind, ss.definition(), 1,
                         src_id, ss2of(ss), u))
-
-
 
     # (2) LOAD PWN CONCEPTS AS OMW CONCEPTS
 
     pos = ss.pos()
     pid = pos_id[pos.replace('s', 'a')]
-
 
     # SYNSETS
     c.execute("""INSERT INTO ss (ili_id, pos_id, u)
@@ -338,7 +314,6 @@ for ss in wn.all_synsets():
 
     ssid[ss2of(ss)] = ss_id
 
-
     c.execute("""INSERT INTO def (ss_id, lang_id, def, u)
                  VALUES (?,?,?,?)
               """, (ss_id, lang_id, ss.definition(), u))
@@ -347,7 +322,6 @@ for ss in wn.all_synsets():
     c.execute("""INSERT INTO def_src (def_id, src_id, conf, u)
                  VALUES (?,?,?,?)
               """, (def_id, src_id, 1, u))
-
 
     # EXAMPLES
     exs = ss.examples()
@@ -361,8 +335,6 @@ for ss in wn.all_synsets():
         c.execute("""INSERT INTO ssexe_src (ssexe_id, src_id, conf, u)
                      VALUES (?,?,?,?)
                   """, (ex_id, src_id, 1, u))
-
-
 
     # INSERT FORMS, WORDS (SAME) and SENSES
     for l in ss.lemmas():
@@ -387,7 +359,6 @@ for ss in wn.all_synsets():
                      VALUES (?,?) """, (form_id, u))
         word_id = c.lastrowid
 
-
         c.execute("""INSERT INTO wf_link (w_id, f_id, src_id, conf, u)
                      VALUES (?,?,?,?,?)
                   """, (word_id, form_id, src_id, 1, u))
@@ -400,9 +371,7 @@ for ss in wn.all_synsets():
         c.execute("""INSERT INTO s_src (s_id, src_id, conf, u)
                      VALUES (?,?,?,?) """, (s_id, src_id, 1, u))
 
-
-        ss_lemma_sense_id[(ss,l)] = s_id
-
+        ss_lemma_sense_id[(ss, l)] = s_id
 
 ################################################################
 # SECOND ROUND: INSERT RELATIONS
@@ -447,7 +416,6 @@ for line in nltk_senslink_names.splitlines():
     (k, v) = line.split('\t')
     senslinks[k] = v
 
-
 for ss in wn.all_synsets():
 
     pos = ss.pos()
@@ -466,8 +434,7 @@ for ss in wn.all_synsets():
                          VALUES (?,?,?,?,?)""",
                       (sslink_id, src_id, 1, lang_id, u))
 
-
-            if r in linkrev.keys(): # insert the reverse relation
+            if r in linkrev.keys():  # insert the reverse relation
 
                 c.execute("""INSERT INTO sslink (ss1_id, ssrel_id, ss2_id, u)
                              VALUES (?,?,?,?)""",
@@ -477,7 +444,6 @@ for ss in wn.all_synsets():
                 c.execute("""INSERT INTO sslink_src (sslink_id, src_id, conf, lang_id, u)
                              VALUES (?,?,?,?,?)""",
                           (sslink_id, src_id, 1, lang_id, u))
-
 
     # SS LEXNAMES
     lxn = ss.lexname()
@@ -490,32 +456,26 @@ for ss in wn.all_synsets():
     # SS VERBFRAMES
     sframes = ss.frame_ids()
     for frame in sframes:
-
         c.execute("""INSERT INTO ssxl (ss_id, resource_id, x1, x2, x3, u)
                      VALUES (?,?,?,?,?,?)
                   """, (ssid[ss2of(ss)], verbframes_resource_id, frame,
                         vframe['eng'][frame], vframe['engsym'][frame], u))
 
-
-
     # SENSE LINKS
     for l1 in ss.lemmas():
-        s1_id = ss_lemma_sense_id[(ss,l1)]
+        s1_id = ss_lemma_sense_id[(ss, l1)]
 
-        lframeids = l1.frame_ids() # lemma frames
+        lframeids = l1.frame_ids()  # lemma frames
 
         for frame in lframeids:
-
             c.execute("""INSERT INTO sxl (s_id, resource_id, x1, x2, x3, u)
                          VALUES (?,?,?,?,?,?)
                       """, (s1_id, verbframes_resource_id, frame,
                             vframe['eng'][frame], vframe['engsym'][frame], u))
 
-
         for r in senslinks:
             for l2 in getattr(l1, senslinks[r])():
-
-                s2_id = ss_lemma_sense_id[(l2.synset(),l2)]
+                s2_id = ss_lemma_sense_id[(l2.synset(), l2)]
 
                 c.execute("""INSERT INTO slink (s1_id, srel_id, s2_id, u)
                              VALUES (?,?,?,?)""",
@@ -525,9 +485,6 @@ for ss in wn.all_synsets():
                 c.execute("""INSERT INTO slink_src (slink_id, src_id, conf, u)
                              VALUES (?,?,?,?)""",
                           (slink_id, src_id, 1, u))
-
-
-
 
 con.commit()
 con.close()
