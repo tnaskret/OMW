@@ -2,12 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import datetime
-from flask import Flask, current_app, url_for
-from flask_login import LoginManager, UserMixin, login_required, login_user, logout_user, current_user, wraps
+from flask import Flask
+from flask_login import LoginManager, UserMixin, current_user, wraps
 from itsdangerous import URLSafeTimedSerializer # for safe session cookies
 from hashlib import md5
 
-from common_sql import *
+from omw.common_sql import fetch_userid
 
 app = Flask(__name__)
 with app.app_context():

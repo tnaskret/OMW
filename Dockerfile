@@ -1,34 +1,16 @@
 FROM python:3.7-slim
 MAINTAINER Tomasz Naskręt <tomasz.naskret@pwr.edu.pl>
 
-ENV INSTALL_PATH /app
-RUN mkdir -p $INSTALL_PATH
-
-WORKDIR $INSTALL_PATH
+WORKDIR /app
 
 COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt
+
 COPY . .
+RUN pip install --editable .
 
-RUN python install_nltk_wordnet.py
+RUN omw db_init reset
+RUN omw db_load load_all
+RUN omw db_update update_all
 
-WORKDIR $INSTALL_PATH/omw/bin
-RUN sh doall.bash
-
-RUN python make-admin-db.py
-RUN python load-admin-users.py  admin.db
-
-#RUN mv omw.db ../db
-#RUN mv admin.db ../db
-
-#RUN chmod -R go+w ../db
-
-#WORKDIR $INSTALL_PATH
-
-#RUN python omw/bin/load-pwn-freq.py omw/db/omw.db
-#RUN python omw/bin/update-freq.py omw/db/omw.db
-#RUN python omw/bin/update-label.py omw/db/omw.db
-
-WORKDIR $INSTALL_PATH/omw
-
-CMD python __init__.py
+CMD gunicorn -b 0.0.0.0:5000 --access-logfile - "omw.app:create_app()"

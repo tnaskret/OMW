@@ -3,8 +3,8 @@ version: '2'
 services:
   website:
     build: .
-    environment:
-      PYTHONUNBUFFERED: 'true'
+    env_file:
+      - '.env'
     volumes:
       - '.:/app'
     ports:

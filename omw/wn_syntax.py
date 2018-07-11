@@ -1,16 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import os, sys, re, sqlite3, datetime
-from flask import Flask, current_app
-from flask import render_template, g, request, redirect, url_for, send_from_directory, session, flash
+import os, sys, re, datetime
+from flask import request
 import urllib, gzip
 from werkzeug import secure_filename
 from lxml import etree
-from collections import defaultdict as dd
 
-from common_sql import *
-from omw_sql import *
+from omw.omw_sql import *
 from datetime import datetime as dt
 
 import json # to print dd

@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import sqlite3
+import os
 from flask import Flask, current_app, g
 from collections import defaultdict as dd
 
@@ -14,21 +15,23 @@ def qs(ll):
 app = Flask(__name__)
 with app.app_context():
 
-    # ILIDB = 'db/ili.db'
-    OMWDB = 'db/omw.db'
-    ADMINDB = 'db/admin.db'
+    omw_db = os.path.realpath(
+        os.path.join(os.getcwd(), 'db', 'omw.db'))
+
+    admin_db = os.path.realpath(
+        os.path.join(os.getcwd(), 'db', 'admin.db'))
 
     ############################################################################
     # SET UP CONNECTIONS
     ############################################################################
     def connect_admin():
-        return sqlite3.connect(ADMINDB)
+        return sqlite3.connect(admin_db)
 
     # def connect_ili():
     #     return sqlite3.connect(ILIDB)
 
     def connect_omw():
-        return sqlite3.connect(OMWDB)
+        return sqlite3.connect(omw_db)
 
     def query_admin(query, args=(), one=False):
         cur = g.admin.execute(query, args)

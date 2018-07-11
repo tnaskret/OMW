@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from flask import Flask, current_app, g
-from collections import defaultdict as dd
-from collections import namedtuple as nt
-from common_sql import *
+from omw.common_sql import *
 
 #ntsense=namedtuple('Sense', ['lemma', 'y'], verbose=True)
 
-    
+
 app = Flask(__name__)
 with app.app_context():
 
