@@ -3,12 +3,8 @@
 
 from omw.common_sql import *
 
-#ntsense=namedtuple('Sense', ['lemma', 'y'], verbose=True)
-
-
 app = Flask(__name__)
 with app.app_context():
-
     def fetch_langs():
         lang_id = dd(lambda: dd())
         lang_code = dd(lambda: dd())
@@ -22,6 +18,7 @@ with app.app_context():
             lang_code['code'][r['iso639']] = r['id']
         return lang_id, lang_code
 
+
     def fetch_key_bcp_lang_code(lang):
         """ There should be only one id for either lang code """
         for r in query_omw("""SELECT id
@@ -29,11 +26,13 @@ with app.app_context():
                               WHERE (bcp47 = ?)""", [lang]):
             return r['id']
 
+
     def fetch_proj():
         proj_id = dict()
         for r in query_omw("""SELECT id, code FROM proj"""):
-            proj_id[r['id']]=r['code']
+            proj_id[r['id']] = r['code']
         return proj_id
+
 
     def insert_new_project(code, u):
         " Adds a new project to the system "
@@ -44,6 +43,7 @@ with app.app_context():
             return True
         except:
             return False
+
 
     def f_proj_id_by_code(code):
         for r in query_omw("""SELECT id, code
@@ -56,22 +56,24 @@ with app.app_context():
         proj_id = fetch_proj()
         src_id = dict()
         for r in query_omw("""SELECT id, proj_id, version FROM src"""):
-            src_id[r['id']]=(proj_id[r['proj_id']],r['version'])
+            src_id[r['id']] = (proj_id[r['proj_id']], r['version'])
         return src_id
+
 
     def insert_src(proj_id, version, u):
         return write_omw("""INSERT INTO src (proj_id, version, u)
                             VALUES (?,?,?)""",
                          [proj_id, version, u])
 
+
     def f_src_id_by_proj_id_ver(proj_id, version):
         for r in query_omw("""SELECT id, proj_id, version
                               FROM src
                               WHERE proj_id = ? AND version = ?""",
                            [proj_id, version]):
-
             return r['id']
-        
+
+
     def f_src_id_by_proj_ver(proj, version):
         # print(proj,version)
         for r in query_omw("""SELECT src.id 
@@ -79,20 +81,21 @@ with app.app_context():
                               ON src.proj_id=proj.id 
                               WHERE proj.code= ? AND src.version = ?""",
                            [proj, version]):
-            return r['id']   
+            return r['id']
+
 
     def fetch_src_meta():
-        src_meta = dd(lambda:  dd(str))
+        src_meta = dd(lambda: dd(str))
         for r in query_omw("""SELECT src_id, attr, val, u, t FROM src_meta"""):
-             src_meta[r['src_id']][r['attr']] = r['val']
-             #src_meta_id[r['src_id']].append(r)
+            src_meta[r['src_id']][r['attr']] = r['val']
+            # src_meta_id[r['src_id']].append(r)
         return src_meta
 
-    
+
     def fetch_src_id_pos_stats(src_id):
-        src_pos_stats=dd(lambda: dd(int))
+        src_pos_stats = dd(lambda: dd(int))
         pos = fetch_pos()
-        r  =  query_omw_direct("""    
+        r = query_omw_direct("""    
         SELECT pos_id, count(distinct s.ss_id),
         count(distinct s.w_id), count(distinct s.id)
         FROM s JOIN s_src
@@ -100,21 +103,22 @@ with app.app_context():
         JOIN ss ON s.ss_id=ss.id
         WHERE s_src.src_id=? group by pos_id""", (src_id,))
         for (p, ss, w, s) in r:
-            ps =  pos['id'][p] 
+            ps = pos['id'][p]
             src_pos_stats[ps]['synsets'] = ss
             src_pos_stats[ps]['words'] = w
             src_pos_stats[ps]['senses'] = s
-        return  src_pos_stats
+        return src_pos_stats
+
 
     def fetch_ssrel_stats(src_id):
-        constitutive = ['instance_hyponym','instance_hypernym',
-                         'hypernym', 'hyponym',
-                         'synonym', 'antonym',
-                         'mero_part', 'holo_part',
-                         'mero_member', 'holo_member',
-                         'mero_substance', 'holo_substance' ]
+        constitutive = ['instance_hyponym', 'instance_hypernym',
+                        'hypernym', 'hyponym',
+                        'synonym', 'antonym',
+                        'mero_part', 'holo_part',
+                        'mero_member', 'holo_member',
+                        'mero_substance', 'holo_substance']
         src_ssrel_stats = dd(int)
-        ssrl=fetch_ssrel()
+        ssrl = fetch_ssrel()
         for r in query_omw("""
         SELECT  ssrel_id, count(ssrel_id)
         FROM sslink JOIN sslink_src
@@ -126,12 +130,13 @@ with app.app_context():
             src_ssrel_stats['TOTAL'] += r['count(ssrel_id)']
             if link[0] in constitutive:
                 src_ssrel_stats['CONSTITUATIVE'] += r['count(ssrel_id)']
-            
+
         return src_ssrel_stats
-            
+
+
     def fetch_src_id_stats(src_id):
-        src_id_stats=dd(int)
-        
+        src_id_stats = dd(int)
+
         for r in query_omw("""
         SELECT count(distinct s.ss_id), count(distinct s.id)
         FROM s JOIN s_src 
@@ -151,7 +156,7 @@ with app.app_context():
             core_id = cid['id']
             for r in query_omw("""select count(distinct ss.id) 
             FROM ss JOIN ss_src ON ss.id=ss_src.ss_id JOIN ssxl ON ssxl.ss_id=ss.id 
-            WHERE ss_src.src_id = ? AND ssxl.resource_id = ?""", [src_id, core_id]): 
+            WHERE ss_src.src_id = ? AND ssxl.resource_id = ?""", [src_id, core_id]):
                 src_id_stats['core'] = r['count(distinct ss.id)']
 
         ## synsets that are used in a sense and linked to an ili                    
@@ -163,15 +168,15 @@ with app.app_context():
          (SELECT s.ss_id FROM s
           WHERE s.id IN
            (SELECT s_id FROM s_src
-	        WHERE s_src.src_id=?))""", [src_id]): 
-            src_id_stats['in_ili'] = r['count(distinct id)']                 
+	        WHERE s_src.src_id=?))""", [src_id]):
+            src_id_stats['in_ili'] = r['count(distinct id)']
 
-        ### Definitions
+            ### Definitions
         for r in query_omw("""
         SELECT count(distinct ss_id)
         FROM def WHERE id IN
           (SELECT def_id FROM def_src
-           WHERE src_id =?)""", [src_id]): 
+           WHERE src_id =?)""", [src_id]):
             src_id_stats['def'] = r['count(distinct ss_id)']
 
         ### Examples
@@ -179,11 +184,11 @@ with app.app_context():
         SELECT count(distinct ss_id)
         FROM ssexe WHERE id in 
           (SELECT ssexe_id FROM ssexe_src
-           WHERE src_id =?)""", [src_id]): 
+           WHERE src_id =?)""", [src_id]):
             src_id_stats['ssexe'] = r['count(distinct ss_id)']
         return src_id_stats
-    
-        
+
+
     def fetch_src_for_s_id(s_ids):
         """return a dict of lists of (src_ids, conf)  per sense id
            src_id[s_id] = [(src_id, conf), ... ]
@@ -193,7 +198,8 @@ with app.app_context():
         FROM s_src WHERE s_id in (%s)""" % qs(s_ids), s_ids):
             src_sid[r['s_id']].append((r['src_id'], r['conf']))
         return src_sid
-    
+
+
     def fetch_src_for_ss_id(s_ids):
         """return a dict of lists of (src_ids, conf)  per synset id
            src_id[ss_id] = [(src_id, src_key, conf), ... ]
@@ -204,27 +210,30 @@ with app.app_context():
             src_ssid[r['ss_id']].append((r['src_id'], r['src_key'], r['conf']))
         return src_ssid
 
-         
+
     def insert_src_meta(src_id, attr, val, u):
         return write_omw("""INSERT INTO src_meta (src_id, attr, val, u)
                             VALUES (?,?,?,?)""",
                          [src_id, attr, val, u])
+
 
     def blk_insert_src_meta(tuple_list):
         """ tupple_list must of of format [(src_id, attr, val, u), ...] """
         return blk_write_omw("""INSERT INTO src_meta (src_id, attr, val, u)
                                 VALUES (?,?,?,?)""", tuple_list)
 
+
     def fetch_kind():
         kind_id = dict()
         for r in query_omw("""SELECT id, kind FROM kind"""):
-            kind_id[r['id']]=r['kind']
+            kind_id[r['id']] = r['kind']
         return kind_id
+
 
     def fetch_status():
         status_id = dict()
         for r in query_omw("""SELECT id, status FROM status"""):
-            status_id[r['id']]=r['status']
+            status_id[r['id']] = r['status']
         return status_id
 
 
@@ -232,29 +241,36 @@ with app.app_context():
         for r in query_omw("""SELECT MAX(id) FROM ili"""):
             return r['MAX(id)']
 
+
     def fetch_max_ss_id():
         for r in query_omw("""SELECT MAX(id) FROM ss"""):
             return r['MAX(id)']
+
 
     def fetch_max_def_id():
         for r in query_omw("""SELECT MAX(id) FROM def"""):
             return r['MAX(id)']
 
+
     def fetch_max_ssexe_id():
         for r in query_omw("""SELECT MAX(id) FROM ssexe"""):
             return r['MAX(id)']
+
 
     def fetch_max_sslink_id():
         for r in query_omw("""SELECT MAX(id) FROM sslink"""):
             return r['MAX(id)']
 
+
     def fetch_max_f_id():
         for r in query_omw("""SELECT MAX(id) FROM f"""):
             return r['MAX(id)']
 
+
     def fetch_max_w_id():
         for r in query_omw("""SELECT MAX(id) FROM w"""):
             return r['MAX(id)']
+
 
     def fetch_max_s_id():
         for r in query_omw("""SELECT MAX(id) FROM s"""):
@@ -265,7 +281,8 @@ with app.app_context():
         return write_omw("""INSERT INTO ili
                            (kind_id, def, status_id, origin_src_id, src_key, u)
                            VALUES (?,?,?,?,?,?)""",
-                 [kind, definition, status, src, key, u])
+                         [kind, definition, status, src, key, u])
+
 
     def blk_insert_into_ili(tuple_list):
         return blk_write_omw("""INSERT INTO ili
@@ -287,7 +304,7 @@ with app.app_context():
                                   FROM ili_rating
                                   WHERE ili_id in ({})
                                   AND   u = ?""".format(ili_list[0]),
-                               ili_list[1]+[u]):
+                               ili_list[1] + [u]):
                 rating[r['ili_id']].append((r['rating'], r['u'], r['t']))
         else:
             # sys.stderr.write('\n NON USER MODE \n') #TEST
@@ -299,6 +316,7 @@ with app.app_context():
                 rating[r['ili_id']].append((r['rating'], r['u'], r['t']))
 
         return rating
+
 
     def f_rate_summary(ili_ids):
         """
@@ -319,7 +337,6 @@ with app.app_context():
                     down_who[int(key)].append(u)
 
         return counts, up_who, down_who
-
 
 
     def rate_ili_id(ili_id, rate, u):
@@ -375,7 +392,7 @@ with app.app_context():
                                   FROM ili_com
                                   WHERE ili_id in ({})
                                   AND   u = ?""".format(ili_list[0]),
-                               ili_list[1]+[u]):
+                               ili_list[1] + [u]):
                 comments[r['ili_id']].append((r['com'], r['u'], r['t']))
         else:
             for r in query_omw("""SELECT id, ili_id, com, u, t
@@ -386,9 +403,6 @@ with app.app_context():
                 comments[r['ili_id']].append((r['com'], r['u'], r['t']))
 
         return comments
-
-
-
 
 
     def fetch_ili(ili_ids=None):
@@ -407,16 +421,17 @@ with app.app_context():
                                 src_id[c['origin_src_id']], c['src_key'],
                                 status_id[c['status_id']], c['superseded_by_id'],
                                 c['t'])
-                ili_defs[c['def']]=c['id']
+                ili_defs[c['def']] = c['id']
         else:
             for c in query_omw("""SELECT * FROM ili """):
                 ili[c['id']] = (kind_id[c['kind_id']], c['def'],
                                 src_id[c['origin_src_id']], c['src_key'],
                                 status_id[c['status_id']], c['superseded_by_id'],
                                 c['t'])
-                ili_defs[c['def']]=c['id']
+                ili_defs[c['def']] = c['id']
 
         return ili, ili_defs
+
 
     def fetch_ili_status(status):
 
@@ -429,12 +444,8 @@ with app.app_context():
             ili[c['id']] = (kind_id[c['kind_id']], c['def'],
                             src_id[c['origin_src_id']], c['src_key'],
                             status_id[c['status_id']], c['superseded_by_id'],
-                                 c['t'])
+                            c['t'])
         return ili
-
-
-
-
 
 
     def insert_new_language(bcp, iso, name, u):
@@ -443,7 +454,7 @@ with app.app_context():
         Only the bcp47 code and the language name are required.
         """
         if (bcp and name and u \
-            and (not fetch_key_bcp_lang_code(bcp))):
+                and (not fetch_key_bcp_lang_code(bcp))):
 
             try:
                 bcp = bcp.strip() if bcp else bcp
@@ -465,39 +476,40 @@ with app.app_context():
             return False
 
 
-
-
     # OMW
 
     def fetch_pos():
         pos_id = dd(lambda: dd())
         for r in query_omw("""SELECT id, tag, def FROM pos"""):
-            pos_id['id'][r['id']]=r['tag']
-            pos_id['tag'][r['tag']]=r['id']
-            pos_id['def'][r['id']]=r['def']
+            pos_id['id'][r['id']] = r['tag']
+            pos_id['tag'][r['tag']] = r['id']
+            pos_id['def'][r['id']] = r['def']
         return pos_id
+
 
     def fetch_ssrel():
         ssrel_dict = dd(lambda: dd())
         for r in query_omw("""SELECT id, rel, def FROM ssrel"""):
-            ssrel_dict['id'][r['id']]=(r['rel'],r['def'])
-            ssrel_dict['rel'][r['rel']]=(r['id'],r['def'])
+            ssrel_dict['id'][r['id']] = (r['rel'], r['def'])
+            ssrel_dict['rel'][r['rel']] = (r['id'], r['def'])
         return ssrel_dict
+
 
     def fetch_def_by_ssid_lang_text(ss_id, lang_id, d):
         for r in query_omw(""" SELECT id, ss_id, lang_id, def FROM def
                               WHERE ss_id = ?
                               AND lang_id = ?
                               AND def = ?""",
-                          [ss_id, lang_id, d]):
+                           [ss_id, lang_id, d]):
             return r['id']
+
 
     def fetch_ssexe_by_ssid_lang_text(ss_id, lang_id, e):
         for r in query_omw(""" SELECT id, ss_id, lang_id, ssexe FROM ssexe
                               WHERE ss_id = ?
                               AND lang_id = ?
                               AND ssexe = ?""",
-                          [ss_id, lang_id, e]):
+                           [ss_id, lang_id, e]):
             return r['id']
 
 
@@ -506,13 +518,12 @@ with app.app_context():
         synset_list = list(synset_list)
         ss_list = (",".join("?" for s in synset_list), synset_list)
 
-        ss = dict() # ss[ss_id][s_id] = [wid, fid, lang_id, pos_id]
+        ss = dict()  # ss[ss_id][s_id] = [wid, fid, lang_id, pos_id]
         for r in query_omw(""" SELECT id, ili_id, pos_id FROM ss
                 WHERE id in (%s) """ % (ss_list[0]), ss_list[1]):
             ss[r['id']] = (r['ili_id'], r['pos_id'])
 
-
-        senses = dd(lambda: dd(list)) # senses[ss_id][lang] = [(s_id, lemma, freq), ]
+        senses = dd(lambda: dd(list))  # senses[ss_id][lang] = [(s_id, lemma, freq), ]
         s_tmp = list()
         s_list = list()
         for r in query_omw("""
@@ -532,31 +543,29 @@ with app.app_context():
                            % ",".join("?" for s in s_list), s_list):
             sfreq[r['s_id']] = r['freq']
 
-        for (ss_id, lang_id, s_id, lemma) in s_tmp:  
+        for (ss_id, lang_id, s_id, lemma) in s_tmp:
             senses[ss_id][lang_id].append((s_id, lemma, sfreq[s_id]))
         for ss_id in senses:
             for lang_id in senses[ss_id]:
                 senses[ss_id][lang_id].sort(key=lambda x: x[2], reverse=True)
 
-        defs = dd(lambda: dd(list)) # defs[ss_id][lang] = [def, def2]
+        defs = dd(lambda: dd(list))  # defs[ss_id][lang] = [def, def2]
         for r in query_omw(""" SELECT ss_id, lang_id, def FROM def
                 WHERE ss_id in (%s) """ % (ss_list[0]), ss_list[1]):
             defs[r['ss_id']][r['lang_id']].append(r['def'])
 
-
-        exes = dd(lambda: dd(list)) # exs[ss_id][lang] = [ex, ex2]
+        exes = dd(lambda: dd(list))  # exs[ss_id][lang] = [ex, ex2]
         for r in query_omw(""" SELECT ss_id, lang_id, ssexe FROM ssexe
                 WHERE ss_id in (%s) """ % (ss_list[0]), ss_list[1]):
             exes[r['ss_id']][r['lang_id']].append(r['ssexe'])
 
-
-        links = dd(lambda: dd(list)) # links[ss1_id][ssre] = [ss2_id, ...]
+        links = dd(lambda: dd(list))  # links[ss1_id][ssre] = [ss2_id, ...]
         for r in query_omw(""" SELECT ss1_id, ssrel_id, ss2_id FROM sslink
                 WHERE ss1_id in (%s) """ % (ss_list[0]), ss_list[1]):
             links[r['ss1_id']][r['ssrel_id']].append(r['ss2_id'])
 
-            
         return ss, senses, defs, exes, links
+
 
     def fetch_core():
         """return the core seynsets"""
@@ -566,18 +575,18 @@ with app.app_context():
         # print(r)
         if r:
             rid = r['id']
-            for q in  query_omw("""SELECT ss_id, x1 FROM ssxl WHERE resource_id=?""", (rid,)):
+            for q in query_omw("""SELECT ss_id, x1 FROM ssxl WHERE resource_id=?""", (rid,)):
                 core_ss.add(q['ss_id'])
                 core_ili.add(q['x1'])
         return core_ss, core_ili
 
-    
+
     def fetch_sense(s_id):
         """return information about the sense
            FIXME:
         """
         # sense = (lemma, pos, freq, w_id, ss_id, ili_id)
-        sense=[]
+        sense = []
         for r in query_omw("""
                 SELECT  lemma, w_id, canon, ss_id, pos_id, ili_id
                 FROM ( SELECT lemma, w_id, canon, ss_id
@@ -589,21 +598,22 @@ with app.app_context():
                  JOIN ss on ss.id=ss_id
                  """, (s_id,)):
             sense = [r['lemma'], r['pos_id'], 0,
-                     r['w_id'],  r['ss_id'], r['ili_id']]
+                     r['w_id'], r['ss_id'], r['ili_id']]
         ### NOTE hard-coding frequency type smt_id=1
         for r in query_omw("""SELECT sml_id as freq FROM sm 
                               WHERE s_id=? and smt_id=1""", (s_id,)):
             if r['freq']:
-                sense[2] =  r['freq']
+                sense[2] = r['freq']
 
         return sense
+
 
     def fetch_forms(w_id):
         """return the forms of all variants
         FIXME: should include meta data
         """
         # variant = [lemma]
-        forms=[]
+        forms = []
         for r in query_omw("""
         SELECT lemma, id as f_id
         FROM (SELECT f_id FROM wf_link
@@ -612,47 +622,53 @@ with app.app_context():
             forms.append(r['lemma'])
         return forms
 
+
     def fetch_labels(lang_id, sss):
         """return a dict with lang_id labels for the synsets in sss"""
         labels = dict()
         for r in query_omw("""SELECT ss_id, label FROM label 
         WHERE lang_id = ? AND ss_id in (%s)""" % ",".join('?' for s in sss),
                            [lang_id] + list(sss)):
-            labels[r['ss_id']]=r['label']
+            labels[r['ss_id']] = r['label']
         return labels
-        
-    
+
+
     def fetch_ss_id_by_src_orginalkey(src_id, originalkey):
         for r in query_omw(""" SELECT ss_id, src_id, src_key FROM ss_src
                 WHERE src_id = ? and src_key = ? """, [src_id, originalkey]):
             ss = r['ss_id']
         return ss
 
+
     def fetch_all_defs_by_ss_lang_text():
         defs = dd(lambda: dd())
         for r in query_omw("""SELECT id, ss_id, lang_id, def FROM def"""):
-            defs[r['ss_id']][(r['lang_id'],r['def'])]=r['id']
+            defs[r['ss_id']][(r['lang_id'], r['def'])] = r['id']
         return defs
+
 
     def fetch_all_ssexe_by_ss_lang_text():
         ssexes = dd(lambda: dd())
         for r in query_omw("""SELECT id, ss_id, lang_id, ssexe FROM ssexe"""):
-            ssexes[r['ss_id']][(r['lang_id'],r['ssexe'])]=r['id']
+            ssexes[r['ss_id']][(r['lang_id'], r['ssexe'])] = r['id']
         return ssexes
+
 
     def fetch_all_ssrels_by_ss_rel_trgt():
         sslinks = dd(lambda: dd())
         for r in query_omw("""SELECT id, ss1_id, ssrel_id, ss2_id
                               FROM sslink"""):
-            sslinks[r['ss1_id']][(r['ssrel_id'],r['ss2_id'])]=r['id']
+            sslinks[r['ss1_id']][(r['ssrel_id'], r['ss2_id'])] = r['id']
         return sslinks
+
 
     def fetch_all_forms_by_lang_pos_lemma():
         forms = dd(lambda: dd())
         for r in query_omw("""SELECT id, lang_id, pos_id, lemma
                               FROM f"""):
-            forms[r['lang_id']][(r['pos_id'],r['lemma'])]=r['id']
+            forms[r['lang_id']][(r['pos_id'], r['lemma'])] = r['id']
         return forms
+
 
     def f_ss_id_by_ili_id(ili_id):
         """ Return a list of ss_ids from an ili_id """
@@ -669,11 +685,10 @@ with app.app_context():
             link to a single ili_id. """
         ili_ss_map = dd(lambda: dd(list))
         for r in query_omw("""SELECT id, ili_id, pos_id FROM ss"""):
-            ili_ss_map['ili'][r['ili_id']].append((r['id'],r['pos_id']))
+            ili_ss_map['ili'][r['ili_id']].append((r['id'], r['pos_id']))
             ili_ss_map['ss'][r['id']] = r['ili_id']
 
         return ili_ss_map
-
 
 
     def f_sslink_id_by_ss1_rel_ss2(ss1, rel, ss2):
@@ -693,6 +708,7 @@ with app.app_context():
                             VALUES (?,?,?)""",
                          [ili_id, pos_id, u])
 
+
     def blk_insert_omw_ss(tuple_list):
         """ tuple_list = [(id, ili_id, pos_id, u), ...]"""
         return blk_write_omw("""INSERT INTO ss (id, ili_id, pos_id, u)
@@ -704,6 +720,7 @@ with app.app_context():
                             VALUES (?,?,?,?,?)""",
                          [ss_id, src_id, src_key, conf, u])
 
+
     def blk_insert_omw_ss_src(tuple_list):
         return blk_write_omw("""INSERT INTO ss_src (ss_id, src_id, src_key, conf, u)
                                 VALUES (?,?,?,?,?)""", tuple_list)
@@ -714,23 +731,28 @@ with app.app_context():
                             VALUES (?,?,?,?)""",
                          [ss_id, lang_id, d, u])
 
+
     def blk_insert_omw_def(tuple_list):
         return blk_write_omw("""INSERT INTO def (id, ss_id, lang_id, def, u)
                                 VALUES (?, ?,?,?,?)""", tuple_list)
+
 
     def insert_omw_def_src(def_id, src_id, conf, u):
         return write_omw("""INSERT INTO def_src (def_id, src_id, conf, u)
                             VALUES (?,?,?,?)""",
                          [def_id, src_id, conf, u])
 
+
     def blk_insert_omw_def_src(tuple_list):
         return blk_write_omw("""INSERT INTO def_src (def_id, src_id, conf, u)
                                 VALUES (?,?,?,?)""", tuple_list)
+
 
     def insert_omw_ssexe(ss_id, lang_id, e, u):
         return write_omw("""INSERT INTO ssexe (ss_id, lang_id, ssexe, u)
                             VALUES (?,?,?,?)""",
                          [ss_id, lang_id, e, u])
+
 
     def blk_insert_omw_ssexe(tuple_list):
         return blk_write_omw("""INSERT INTO ssexe (id, ss_id, lang_id, ssexe, u)
@@ -742,23 +764,28 @@ with app.app_context():
                             VALUES (?,?,?,?)""",
                          [ssexe_id, src_id, conf, u])
 
+
     def blk_insert_omw_ssexe_src(tuple_list):
         return blk_write_omw("""INSERT INTO ssexe_src (ssexe_id, src_id, conf, u)
                                 VALUES (?,?,?,?)""", tuple_list)
+
 
     def insert_omw_sslink(ss1_id, ssrel_id, ss2_id, u):
         return write_omw("""INSERT INTO sslink (ss1_id, ssrel_id, ss2_id, u)
                             VALUES (?,?,?,?)""",
                          [ss1_id, ssrel_id, ss2_id, u])
 
+
     def blk_insert_omw_sslink(tuple_list):
         return blk_write_omw("""INSERT INTO sslink (id, ss1_id, ssrel_id, ss2_id, u)
                                 VALUES (?,?,?,?,?)""", tuple_list)
+
 
     def insert_omw_sslink_src(sslink_id, src_id, conf, lang_id, u):
         return write_omw("""INSERT INTO sslink_src (sslink_id, src_id, conf, lang_id, u)
                             VALUES (?,?,?,?,?)""",
                          [sslink_id, src_id, conf, lang_id, u])
+
 
     def blk_insert_omw_sslink_src(tuple_list):
         return blk_write_omw("""INSERT INTO sslink_src (sslink_id, src_id, conf, lang_id, u)
@@ -771,10 +798,12 @@ with app.app_context():
                             VALUES (?,?,?,?)""",
                          [lang_id, pos_id, form, u])
 
+
     # BLK FORM
     def blk_insert_omw_f(tuple_list):
         return blk_write_omw("""INSERT INTO f (id, lang_id, pos_id, lemma, u)
                                 VALUES (?,?,?,?,?)""", tuple_list)
+
 
     # FORM SRC
     def insert_omw_f_src(f_id, src_id, conf, u):
@@ -782,10 +811,12 @@ with app.app_context():
                             VALUES (?,?,?,?)""",
                          [f_id, src_id, conf, u])
 
+
     # BLK FORM SRC
     def blk_insert_omw_f_src(tuple_list):
         return blk_write_omw("""INSERT INTO f_src (f_id, src_id, conf, u)
                                 VALUES (?,?,?,?)""", tuple_list)
+
 
     # WORD
     def insert_omw_w(canon, u):
@@ -793,10 +824,12 @@ with app.app_context():
                             VALUES (?,?)""",
                          [canon, u])
 
+
     # BLK WORD
     def blk_insert_omw_w(tuple_list):
         return blk_write_omw("""INSERT INTO w (id, canon, u)
                                 VALUES (?,?,?)""", tuple_list)
+
 
     # WORD-FORM LINK
     def insert_omw_wf_link(w_id, f_id, src_id, conf, u):
@@ -804,10 +837,12 @@ with app.app_context():
                             VALUES (?,?,?,?,?)""",
                          [w_id, f_id, src_id, conf, u])
 
+
     # BLK WORD-FORM LINK
     def blk_insert_omw_wf_link(tuple_list):
         return blk_write_omw("""INSERT INTO  wf_link (w_id, f_id, src_id, conf, u)
                             VALUES (?,?,?,?,?)""", tuple_list)
+
 
     # SENSE
     def insert_omw_s(ss_id, w_id, u):
@@ -815,10 +850,12 @@ with app.app_context():
                             VALUES (?,?,?)""",
                          [ss_id, w_id, u])
 
+
     # BLK SENSE
     def blk_insert_omw_s(tuple_list):
         return blk_write_omw("""INSERT INTO s (id, ss_id, w_id, u)
                                 VALUES (?,?,?,?)""", tuple_list)
+
 
     # SENSE SRC
     def insert_omw_s_src(s_id, src_id, conf, u):
@@ -826,11 +863,11 @@ with app.app_context():
                             VALUES (?,?,?,?)""",
                          [s_id, src_id, conf, u])
 
+
     # BLK SENSE SRC
     def blk_insert_omw_s_src(tuple_list):
         return blk_write_omw("""INSERT INTO s_src (s_id, src_id, conf, u)
                                 VALUES (?,?,?,?)""", tuple_list)
-
 
 
     # UPDATE LABELS
@@ -840,59 +877,53 @@ with app.app_context():
         as concept names.
         """
 
-        sfreq=dd(int)
+        sfreq = dd(int)
         f = query_omw("""SELECT id FROM smt WHERE tag='freq'""")
         if f:
             for r in query_omw("""SELECT s_id, sml_id FROM sm WHERE smt_id=?""",
                                str(f[0]['id'])):
-                sfreq[r['s_id']]=r['sml_id']
+                sfreq[r['s_id']] = r['sml_id']
 
-
-        senses =dd(lambda: dd(list))
-        #senses[ss_id][lang_id]=[(ls_id, lemma, freq), ...]
+        senses = dd(lambda: dd(list))
+        # senses[ss_id][lang_id]=[(ls_id, lemma, freq), ...]
         forms = dd(lambda: dd(int))
-        #forms[lang][word] = freq
-        langs=set()
-        eng_id=1 ### we know this :-)
-
+        # forms[lang][word] = freq
+        langs = set()
+        eng_id = 1  ### we know this :-)
 
         for r in query_omw("""SELECT s_id, ss_id, lemma, lang_id
                               FROM (SELECT w_id, canon, ss_id, s_id
                               FROM (SELECT id as s_id, ss_id, w_id FROM s)
                               JOIN w ON w_id = w.id )
                               JOIN f ON canon = f.id"""):
-
-
             senses[r['ss_id']][r['lang_id']].append((r['s_id'], r['lemma'], sfreq[r['s_id']]))
             forms[r['lang_id']][r['lemma']] += 1
             langs.add(r['lang_id'])
 
-
         for ss in senses:
             for l in senses[ss]:
                 senses[ss][l].sort(key=lambda x: (-x[2],  ### sense freq (freq is good)
-                                          forms[l][x[1]], ### uniqueness (freq is bad)
-                                          len(x[1]),  ### length (short is good)
-                                          x[1]))      ### lemma (so it is the same)
+                                                  forms[l][x[1]],  ### uniqueness (freq is bad)
+                                                  len(x[1]),  ### length (short is good)
+                                                  x[1]))  ### lemma (so it is the same)
 
         # make the labels
         label = dd(lambda: dd(str))
-        lgs=sorted(langs)
-        values=list()
+        lgs = sorted(langs)
+        values = list()
 
         for ss in senses:
             for l in lgs:
                 if senses[ss][l]:
-                    label[ss][l]=senses[ss][l][0][1]
+                    label[ss][l] = senses[ss][l][0][1]
                 else:
                     for lx in lgs:  ### start with eng and go through till you find one
                         if senses[ss][lx]:
-                            label[ss][l]=senses[ss][lx][0][1]
+                            label[ss][l] = senses[ss][lx][0][1]
                             break
                     else:
-                        label[ss][l]="?????"
-                values.append((ss, l,  label[ss][l]))
-
+                        label[ss][l] = "?????"
+                values.append((ss, l, label[ss][l]))
 
         # write the labels (delete old ones first)
         write_omw("""DELETE FROM label""")
@@ -900,4 +931,3 @@ with app.app_context():
                          VALUES (?,?,?,"omw")""", values)
 
         return True
-

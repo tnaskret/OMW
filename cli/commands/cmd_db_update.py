@@ -1,9 +1,11 @@
+import sys
+
 import click
 
 import sqlite3
 import os
 
-from omw.app import create_app, sys, dd
+from omw.app import create_app, dd
 from warnings import warn
 
 # Create an app context for the database connection.

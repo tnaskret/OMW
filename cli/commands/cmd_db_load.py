@@ -3,9 +3,10 @@ import click
 import sqlite3
 import os
 import nltk
+import sys
 
 from iso639 import languages
-from omw.app import create_app, sys, dd
+from omw.app import create_app, dd
 from nltk.corpus import wordnet as wn
 
 # Create an app context for the database connection.

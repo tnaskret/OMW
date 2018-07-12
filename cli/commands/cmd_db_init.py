@@ -1,10 +1,9 @@
+import sys
 import click
-
 import sqlite3
 import os
 
-from omw.app import create_app, sys
-
+from omw.app import create_app
 # Create an app context for the database connection.
 app = create_app()
 
@@ -83,23 +82,27 @@ def seed():
     :return: User instance
     """
     u = "Initial seed"
-    omw_connection = sqlite3.connect(admin_db)
-    cursor = omw_connection.cursor()
-    cursor.execute("""INSERT INTO users (userID, full_name, password, 
+    if os.path.isfile(admin_db):
+        omw_connection = sqlite3.connect(admin_db)
+        cursor = omw_connection.cursor()
+        cursor.execute("""INSERT INTO users (userID, full_name, password, 
                  email, access_level, access_group, affiliation, u)
                  VALUES (?,?,?,?,?,?,?,?)""",
               ['admin', 'System Administrator',
                '1fc9b75701d72e2051441d23ee8acc20',
                'changeme@changeme.com', 99, 'admin', 'sys', u])
 
-    cursor.execute("""INSERT INTO users (userID, full_name, password, 
+        cursor.execute("""INSERT INTO users (userID, full_name, password, 
                  email, access_level, access_group, affiliation, u)
                  VALUES (?,?,?,?,?,?,?,?)""",
               ['user1', 'System User 1',
                '46bcc2d7eb5723292133857fa95454b9',
                'changeme@changeme.com', 0, 'common', 'sys', u])
-
-    sys.stdout.write('Admin database seeded with initial users\n')
+        omw_connection.commit()
+        omw_connection.close()
+        sys.stdout.write('Admin database seeded with initial users\n')
+    else:
+        sys.stderr.write('Unable to load users\n')
     return None
 
 
