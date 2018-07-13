@@ -1,14 +1,14 @@
 # Open Multilingual Wordnet 2.0
 
 ## Dependencies
-(for ubuntu)
-    - [docker](https://docs.docker.com/install/)
-    - [docker-compose](https://docs.docker.com/compose/install/)
+##### (for ubuntu)
+    - How to install [docker](https://docs.docker.com/install/)
+    - How to install [docker-compose](https://docs.docker.com/compose/install/)
 
- ## Installation
-    - run `./build.sh` to build docker image and prepare database;
+## Installation
+    - run `./build.sh` to build docker image and prepare databases
 
- ## Start application
+## Start application
     - run `./start.sh`
 
 ## For Development
