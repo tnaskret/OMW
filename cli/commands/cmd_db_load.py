@@ -143,7 +143,7 @@ def sense_relation_types():
         u = "load srel types"
 
         srel_file = os.path.realpath(
-            os.path.join(os.getcwd(), 'sql_scripts', 'srel.tab'))
+            os.path.join(os.getcwd(), 'files', 'srel.tab'))
 
         if os.path.isfile(srel_file):
 
@@ -178,7 +178,7 @@ def synset_relation_types():
         u = "load ssrel types"
 
         ssrel_file = os.path.realpath(
-            os.path.join(os.getcwd(), 'sql_scripts', 'ssrel.tab'))
+            os.path.join(os.getcwd(), 'files', 'ssrel.tab'))
 
         if os.path.isfile(ssrel_file):
 
@@ -349,7 +349,7 @@ def pwn():
         ################################################################
 
         ili_map_file = os.path.realpath(
-            os.path.join(os.getcwd(), 'sql_scripts', 'ili-map.tab'))
+            os.path.join(os.getcwd(), 'files', 'ili-map.tab'))
 
         f = open(ili_map_file, 'r')
         ili_map = dict()
@@ -703,7 +703,7 @@ def core():
         uname = "load core"
 
         wn30_core_file = os.path.realpath(
-            os.path.join(os.getcwd(), 'sql_scripts', 'wn30-core-synsets.tab'))
+            os.path.join(os.getcwd(), 'files', 'wn30-core-synsets.tab'))
 
         f = open(wn30_core_file, 'r')
         core = set()
@@ -718,7 +718,7 @@ def core():
         # GET PWN3.0-ILI ORIGINAL MAPPING
         ################################################################
         ili_map_file = os.path.realpath(
-            os.path.join(os.getcwd(), 'sql_scripts', 'ili-map.tab'))
+            os.path.join(os.getcwd(), 'files', 'ili-map.tab'))
         f = open(ili_map_file, 'r')
         ili_map = dict()
         ili2ss = dict()

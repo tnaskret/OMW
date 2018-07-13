@@ -36,7 +36,7 @@ def omwdb():
     curs = omw_connection.cursor()
 
     sql_script = os.path.realpath(
-        os.path.join(os.getcwd(), 'sql_scripts', 'omw.sql'))
+        os.path.join(os.getcwd(), 'files', 'omw.sql'))
 
     f = open(sql_script, 'r')
     curs.executescript(f.read())
@@ -64,7 +64,7 @@ def admindb():
     curs = omw_connection.cursor()
 
     sql_script = os.path.realpath(
-        os.path.join(os.getcwd(), 'sql_scripts', 'admin.sql'))
+        os.path.join(os.getcwd(), 'files', 'admin.sql'))
 
     f = open(sql_script, 'r')
     curs.executescript(f.read())

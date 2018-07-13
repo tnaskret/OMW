@@ -22,3 +22,6 @@ tramp
 
 # Mac OS X hidden files
 .DS_Store
+
+# egg
+OMW_CLI.egg-info/
