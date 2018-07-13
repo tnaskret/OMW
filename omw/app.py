@@ -1,13 +1,26 @@
 from _md5 import md5
 from functools import wraps
 
-from flask import Flask, render_template, redirect, url_for, flash, jsonify, make_response, Markup, Response
+from flask import Flask, render_template, g, request, redirect, url_for, flash, jsonify, make_response, Markup, \
+    Response, current_app
+
 from flask_login import login_required, login_user, logout_user, current_user, UserMixin
 from collections import OrderedDict as od
 
 from itsdangerous import URLSafeTimedSerializer
 
-from omw.wn_syntax import *
+from lib.safe_next_url import safe_next_url
+from lib.common_sql import connect_admin, connect_omw, fetch_id_from_userid, fetch_userid, query_omw_direct, query_omw, \
+    fetch_allusers
+
+from lib.omw_sql import rate_ili_id, f_rate_summary, fetch_ssrel, fetch_labels, fetch_src_for_ss_id, fetch_src_meta, \
+    fetch_core, fetch_ili, fetch_ss_basic, fetch_langs, fetch_pos, f_ss_id_by_ili_id, fetch_sense, fetch_forms, \
+    fetch_src_for_s_id, f_src_id_by_proj_ver, fetch_ss_id_by_src_orginalkey, fetch_src, dd, fetch_ssrel_stats, \
+    fetch_src_id_pos_stats, fetch_src_id_stats, fetch_kind, fetch_status, fetch_ili_status, fetch_proj, \
+    insert_new_language, insert_new_project, updateLabels, fetch_comment_id, fetch_rate_id, comment_ili_id
+
+from lib.wn_syntax import licenses, uploadFile, validateFile, confirmUpload
+
 from math import log
 
 from omw.extensions import (
@@ -38,25 +51,30 @@ def create_app(settings_override=None):
         """ This login function checks if the username & password
         match the admin.db; if the authentication is successful,
         it passes the id of the user into login_user() """
+        if current_user.is_authenticated:
+            return redirect(url_for('index'))
 
         if request.method == "POST" and \
                 "username" in request.form and \
                 "password" in request.form:
             username = request.form["username"]
             password = request.form["password"]
-
             user = User.get(username)
 
             # If we found a user based on username then compare that the submitted
             # password matches the password in the database. The password is stored
             # is a slated hash format, so you must hash the password before comparing it.
-            if user and hash_pass(password, app) == user.password:
-                login_user(user, remember=True)
-                # FIXME! Get this to work properly...
-                # return redirect(request.args.get("next") or url_for("index"))
-                return redirect(url_for("index"))
+            if user and hash_pass(password) == user.password:
+
+                if login_user(user, remember=True) and user.is_active:
+                    next_url = request.form.get('next')
+                    if next_url:
+                        return redirect(safe_next_url(next_url))
+                    return redirect(url_for("index"))
+                else:
+                    flash('This account has been disabled.', 'error')
             else:
-                flash(u"Invalid username, please try again.")
+                flash('Identity or password is incorrect.', 'error')
         return render_template("login.html")
 
     @app.route("/logout")
@@ -433,7 +451,7 @@ def create_app(settings_override=None):
 
     @app.route('/ili/validation-report', methods=['GET', 'POST'])
     @login_required(role=0, group='open')
-    def validationReport():
+    def validation_report():
 
         vr, filename, wn, wn_dtls = validateFile(current_user.id)
 
@@ -671,46 +689,63 @@ def create_app(settings_override=None):
 
         return dict(scale_freq=scale_freq)
 
+    def hash_pass(password):
+        """ Return the md5 hash of the password+salt """
+        salted_password = password + app.secret_key
+        return md5(salted_password.encode('utf-8')).hexdigest()
+
     return app
 
 
-def hash_pass(password, app):
-    """ Return the md5 hash of the password+salt """
-    salted_password = password + app.secret_key
-    return md5(salted_password.encode('utf-8')).hexdigest()
-
-
 def login_required(role=0, group='open'):
+        """
+        This is a redefinition of the decorator login_required,
+        to include a 'role' argument to allow users with different
+        roles access different views and a group access to close some
+        views by groups. For example:
+        @login_required(role=0, group='ntuwn')   0 = for all
+        """
+
+        def wrapper(fn):
+            @wraps(fn)
+            def decorated_view(*args, **kwargs):
+                if not current_user.is_authenticated:
+                    return login_manager.unauthorized()
+                if current_user.role < role:
+                    return login_manager.unauthorized()
+                if group != 'open' and current_user.group != group:
+                    return login_manager.unauthorized()
+
+                return fn(*args, **kwargs)
+
+            return decorated_view
+
+        return wrapper
+
+
+def extensions(app):
     """
-    This is a redefinition of the decorator login_required,
-    to include a 'role' argument to allow users with different
-    roles access different views and a group access to close some
-    views by groups. For example:
-    @login_required(role=0, group='ntuwn')   0 = for all
+    Register 0 or more extensions (mutates the app passed in).
+
+    :param app: Flask application instance
+    :return: None
     """
+    login_manager.init_app(app)
 
-    def wrapper(fn):
-        @wraps(fn)
-        def decorated_view(*args, **kwargs):
-            if not current_user.is_authenticated:
-                return login_manager.unauthorized()
-            if current_user.role < role:
-                return login_manager.unauthorized()
-            if group != 'open' and current_user.group != group:
-                return login_manager.unauthorized()
-
-            return fn(*args, **kwargs)
-
-        return decorated_view
-
-    return wrapper
+    return None
 
 
 def authentication(app):
+    """
+    Initialize the Flask-Login extension (mutates the app passed in).
+
+    :param app: Flask application instance
+    :param user_model: Model that contains the authentication information
+    :type user_model: SQLAlchemy model
+    :return: None
+    """
     login_manager.login_view = '/login'
     login_manager.login_message = "You don't seem to have permission to see this content."
-
-    login_serializer = URLSafeTimedSerializer(app.secret_key)
 
     @login_manager.user_loader
     def load_user(userID):
@@ -728,48 +763,6 @@ def authentication(app):
         """
         return User.get(userID)
 
-    @login_manager.token_loader
-    def load_token(token):
-        """
-        Flask-Login token_loader callback.
-        The token_loader function asks this function to take the token that was
-        stored on the users computer process it to check if its valid and then
-        return a User Object if its valid or None if its not valid.
-        """
-
-        # The Token itself was generated by User.get_auth_token.  So it is up to
-        # us to known the format of the token data itself.
-
-        # The Token was encrypted using itsdangerous.URLSafeTimedSerializer which
-        # allows us to have a max_age on the token itself.  When the cookie is stored
-        # on the users computer it also has a exipry date, but could be changed by
-        # the user, so this feature allows us to enforce the exipry date of the token
-        # server side and not rely on the users cookie to expire.
-        max_age = app.config["REMEMBER_COOKIE_DURATION"].total_seconds()
-
-        # Decrypt the Security Token, data = [username, hashpass]
-        data = login_serializer.loads(token, max_age=max_age)
-
-        # Find the User
-        user = User.get(data[0])
-
-        # Check Password and return user or None
-        if user and data[1] == user.password:
-            return user
-        return None
-
-
-def extensions(app):
-    """
-    Register 0 or more extensions (mutates the app passed in).
-
-    :param app: Flask application instance
-    :return: None
-    """
-    login_manager.init_app(app)
-
-    return None
-
 
 class User(UserMixin):
     def __init__(self, userID, password, role, group):
@@ -778,10 +771,10 @@ class User(UserMixin):
         self.role = role
         self.group = group
 
-    def get_auth_token(self, app):
+    def get_auth_token(self):
         """ Encode a secure token for cookie """
         data = [str(self.id), self.password]
-        login_serializer = URLSafeTimedSerializer(app.secret_key)
+        login_serializer = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
         return login_serializer.dumps(data)
 
     def get_role(self):

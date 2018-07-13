@@ -1,4 +1,4 @@
-Flask==0.10.1
+Flask==1.0.*
 
 # Application server for both development and production.
 gunicorn==19.8.*
@@ -9,12 +9,9 @@ nltk==3.3
 lxml==4.2.3
 
 # Testing and static analysis.
-pytest==2.9.1
-pytest-cov==2.2.1
-flake8==2.5.4
-
-# CLI.
-Click==6.4
+pytest==3.5.*
+pytest-cov==2.5.*
+flake8==3.5.*
 
 # Extensions.
-Flask-Login==0.3.2
+Flask-Login==0.4.*

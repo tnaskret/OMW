@@ -10,4 +10,5 @@ COPY . .
 
 RUN pip install --editable .
 
-CMD gunicorn -b 0.0.0.0:5000 --access-logfile - "omw.app:create_app()"
+CMD gunicorn -c "python:config.gunicorn" "omw.app:create_app()"
+
