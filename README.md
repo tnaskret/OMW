@@ -2,8 +2,9 @@
 
 ## Dependencies
 ##### (for ubuntu)
-    - How to install [docker](https://docs.docker.com/install/)
-    - How to install [docker-compose](https://docs.docker.com/compose/install/)
+Docker installation [docker](https://docs.docker.com/install/)
+
+Docker-compose installation [docker-compose](https://docs.docker.com/compose/install/)
 
 ## Installation
     - run `./build.sh` to build docker image and prepare databases
