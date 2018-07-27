@@ -13,7 +13,7 @@ Docker-compose installation [docker-compose](https://docs.docker.com/compose/ins
     - run `./start.sh`
 
 ## For Development
-   - Requires Python 3
+   - Requires Python 3+
    - `pip3 install -r requirements.txt`
    - `pip3 install --editable .`
    - `omw db_init reset`

@@ -1,17 +1,12 @@
 from _md5 import md5
-from functools import wraps
 
-from flask import Flask, render_template, g, request, redirect, url_for, flash, jsonify, make_response, Markup, \
-    Response, current_app
+from flask import Flask, render_template, g, request,  jsonify, make_response, Markup, \
+    Response
 
-from flask_login import login_required, login_user, logout_user, current_user, UserMixin
+from flask_login import current_user
 from collections import OrderedDict as od
 
-from itsdangerous import URLSafeTimedSerializer
-
-from lib.safe_next_url import safe_next_url
-from lib.common_sql import connect_admin, connect_omw, fetch_id_from_userid, fetch_userid, query_omw_direct, query_omw, \
-    fetch_allusers
+from lib.common_sql import connect_admin, connect_omw, fetch_id_from_userid, query_omw_direct, query_omw, fetch_allusers
 
 from lib.omw_sql import rate_ili_id, f_rate_summary, fetch_ssrel, fetch_labels, fetch_src_for_ss_id, fetch_src_meta, \
     fetch_core, fetch_ili, fetch_ss_basic, fetch_langs, fetch_pos, f_ss_id_by_ili_id, fetch_sense, fetch_forms, \
@@ -23,6 +18,9 @@ from lib.wn_syntax import licenses, uploadFile, validateFile, confirmUpload
 
 from math import log
 
+from omw.blueprints.user import user
+from omw.blueprints.user.decorator import login_required
+from omw.blueprints.user.models import User
 from omw.extensions import (
     login_manager
 )
@@ -43,47 +41,10 @@ def create_app(settings_override=None):
     if settings_override:
         app.config.update(settings_override)
 
+    app.register_blueprint(user)
     extensions(app)
     authentication(app)
 
-    @app.route("/login", methods=["GET", "POST"])
-    def login():
-        """ This login function checks if the username & password
-        match the admin.db; if the authentication is successful,
-        it passes the id of the user into login_user() """
-        if current_user.is_authenticated:
-            return redirect(url_for('index'))
-
-        if request.method == "POST" and \
-                "username" in request.form and \
-                "password" in request.form:
-            username = request.form["username"]
-            password = request.form["password"]
-            user = User.get(username)
-
-            # If we found a user based on username then compare that the submitted
-            # password matches the password in the database. The password is stored
-            # is a slated hash format, so you must hash the password before comparing it.
-            if user and hash_pass(password) == user.password:
-
-                if login_user(user, remember=True) and user.is_active:
-                    next_url = request.form.get('next')
-                    if next_url:
-                        return redirect(safe_next_url(next_url))
-                    return redirect(url_for("index"))
-                else:
-                    flash('This account has been disabled.', 'error')
-            else:
-                flash('Identity or password is incorrect.', 'error')
-        return render_template("login.html")
-
-    @app.route("/logout")
-    @login_required(role=0, group='open')
-    def logout():
-        logout_user()
-        return redirect(url_for("index"))
-
-    ################################################################################
 
     ################################################################################
     # SET UP CONNECTION WITH DATABASES
@@ -688,39 +649,7 @@ def create_app(settings_override=None):
                 return 100
 
         return dict(scale_freq=scale_freq)
-
-    def hash_pass(password):
-        """ Return the md5 hash of the password+salt """
-        salted_password = password + app.secret_key
-        return md5(salted_password.encode('utf-8')).hexdigest()
-
     return app
-
-
-def login_required(role=0, group='open'):
-        """
-        This is a redefinition of the decorator login_required,
-        to include a 'role' argument to allow users with different
-        roles access different views and a group access to close some
-        views by groups. For example:
-        @login_required(role=0, group='ntuwn')   0 = for all
-        """
-
-        def wrapper(fn):
-            @wraps(fn)
-            def decorated_view(*args, **kwargs):
-                if not current_user.is_authenticated:
-                    return login_manager.unauthorized()
-                if current_user.role < role:
-                    return login_manager.unauthorized()
-                if group != 'open' and current_user.group != group:
-                    return login_manager.unauthorized()
-
-                return fn(*args, **kwargs)
-
-            return decorated_view
-
-        return wrapper
 
 
 def extensions(app):
@@ -762,35 +691,3 @@ def authentication(app):
         flask request.
         """
         return User.get(userID)
-
-
-class User(UserMixin):
-    def __init__(self, userID, password, role, group):
-        self.id = userID
-        self.password = password
-        self.role = role
-        self.group = group
-
-    def get_auth_token(self):
-        """ Encode a secure token for cookie """
-        data = [str(self.id), self.password]
-        login_serializer = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
-        return login_serializer.dumps(data)
-
-    def get_role(self):
-        """ Returns the role (access level) for the user """
-        return self.role
-
-    @staticmethod
-    def get(userid):
-        """
-        Static method to search the database and see if userid exists.
-        If it does exist then return a User Object. If not then return
-        None, as required by Flask-Login.
-        """
-        user = fetch_userid(userid)
-
-        if user:
-            return User(user[0], user[1], user[2], user[3])
-        else:
-            return None
