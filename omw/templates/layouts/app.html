@@ -33,9 +33,11 @@
                                 ({{ current_user.group }})
                                 <span class="caret"></span></a>
                             <ul class="dropdown-menu">
+                                 <li class="dropdown-header">ILI</li>
+                                <li><a href="{{ url_for('upload') }}"><i class="fa fa-upload"></i> Upload Wordnet</a></li>
                                 <li role="separator" class="divider"></li>
                                 <li class="dropdown-header">Session</li>
-                                <li><a href="{{ url_for('user.logout') }}">Log out</a></li>
+                                <li><a href="{{ url_for('user.logout') }}"><i class="fa fa-sign-out"></i> Log out</a></li>
                             </ul>
                         </li>
                     {% else %}
