@@ -18,7 +18,7 @@
   <span class='pos' title='{{pos['def'][ss[ss_id][1]]}}'>{{pos['id'][ss[ss_id][1]]|lower}}</span> 
 
   {% if ss[ss_id][0] %}  <!--  If linked to ILI -->
-  ⟪<a href="{{url_for('concepts_ili',c=ss[ss_id][0])}}">i{{ ss[ss_id][0] }}</a>⟫
+  ⟪<a href="{{url_for('ili.concepts_ili',c=ss[ss_id][0])}}">i{{ ss[ss_id][0] }}</a>⟫
   {% endif %}
   <!-- definition -->
   {% if defs[ss_id][selected_lang|int] %}
