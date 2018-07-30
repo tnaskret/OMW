@@ -7,46 +7,46 @@ from flask import (
     render_template)
 from flask_login import (
     login_user,
-    current_user,
     logout_user)
 
 from lib.safe_next_url import safe_next_url
 from omw.blueprints.user.decorator import login_required
+from omw.blueprints.user.forms import LoginForm
 from omw.blueprints.user.models import User
 
 user = Blueprint('user', __name__, template_folder='templates')
 
 
-@user.route("/login", methods=["GET", "POST"])
+@user.route('/login', methods=['GET', 'POST'])
 def login():
-    """ This login function checks if the username & password
-    match the admin.db; if the authentication is successful,
-    it passes the id of the user into login_user() """
-    if current_user.is_authenticated:
-        return redirect(url_for('index'))
+    form = LoginForm(next=request.args.get('next'))
 
-    if request.method == "POST" and \
-            "username" in request.form and \
-            "password" in request.form:
-        username = request.form["username"]
-        password = request.form["password"]
-        user = User.get(username)
+    if form.validate_on_submit():
+        u = User.get(request.form.get('identity'))
 
-        # If we found a user based on username then compare that the submitted
-        # password matches the password in the database. The password is stored
-        # is a slated hash format, so you must hash the password before comparing it.
-        if user and user.hash_pass(password) == user.password:
-
-            if login_user(user, remember=True) and user.is_active:
+        if u and u.authenticated(password=request.form.get('password')):
+            # As you can see remember me is always enabled, this was a design
+            # decision I made because more often than not users want this
+            # enabled. This allows for a less complicated login form.
+            #
+            # If however you want them to be able to select whether or not they
+            # should remain logged in then perform the following 3 steps:
+            # 1) Replace 'True' below with: request.form.get('remember', False)
+            # 2) Uncomment the 'remember' field in user/forms.py#LoginForm
+            # 3) Add a checkbox to the login form with the id/name 'remember'
+            if login_user(u, remember=True) and u.is_active():
+                # Handle optionally redirecting to the next URL safely.
                 next_url = request.form.get('next')
                 if next_url:
                     return redirect(safe_next_url(next_url))
-                return redirect(url_for("index"))
+
+                return redirect(url_for('page.home'))
             else:
                 flash('This account has been disabled.', 'error')
         else:
             flash('Identity or password is incorrect.', 'error')
-    return render_template("user/login.html")
+
+    return render_template('user/login.html', form=form)
 
 
 @user.route("/logout")

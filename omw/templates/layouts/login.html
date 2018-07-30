@@ -1,10 +1,28 @@
 {% extends 'layouts/base.html' %}
 
 {% block header %}
-  <a href="{{ url_for('index') }}">
-    <img src="{{ url_for('static', filename='images/snake-eyes-large.jpg') }}"
-         class="img-responsive center-block md-margin-bottom"
-         width="178" height="176" title="Snake Eyes" alt="Snake Eyes"/>
-  </a>
+  <nav class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <button type="button" class="navbar-toggle collapsed"
+                data-toggle="collapse" data-target="#navbar"
+                aria-expanded="false" aria-controls="navbar">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a href="{{ url_for('page.home') }}" style="font-size: 1.5em;" class="navbar-brand"><i class="fa fa-fw fa-globe text-primary"></i>Global Wordnet</a>
+      </div>
+      <div id="navbar" class="collapse navbar-collapse">
+        <ul class="nav navbar-nav navbar-right">
+            <li><a href="{{ url_for('ili.ili_welcome') }}"><i class="fa fa-database"></i> Collaborative Interlingual Index</a></li>
+            <li><a href="{{ url_for('omw_welcome') }}"><i class="fa fa-language"></i> Open Multilingual Wordnet</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
 {% endblock %}
 
+{% block footer %}
+{% endblock %}

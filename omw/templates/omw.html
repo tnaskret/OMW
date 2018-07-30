@@ -104,8 +104,7 @@ $(document).ready(function(){
 
      <div id="headerL">
 
-
-       <form method="POST" action="{{ url_for('search_omw') }}">
+      <form method="POST" action="{{ url_for('search_omw') }}">
 	  <span style="display:inline-block; vertical-align:middle">
 	    <table style="padding:0;margin:0;font-size:85%;">
 	      <tr><td style="padding:0;border:none">Search</td></tr>
@@ -134,7 +133,7 @@ $(document).ready(function(){
        <i class="fa fa-user-times" aria-hidden="true"></i></a>&nbsp;&nbsp;
 
      {% endif %}
-     <a href="{{ url_for('ili_welcome') }}">CILI</a>&nbsp;&nbsp;
+     <a href="{{ url_for('ili.ili_welcome') }}">CILI</a>&nbsp;&nbsp;
      <a href="{{ url_for('omw_welcome') }}">OMW</a>&nbsp;&nbsp;
 
 

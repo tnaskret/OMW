@@ -107,12 +107,12 @@ https://opensource.org/licenses/Apache-2.0
 <p>Before the upload takes place, we will provide you with a small report indicating if the syntax of your LMF file seems to be in order.</p>
 <p>You can upload or link to any Wordnet LMF file with the following extensions (.xml, .xml.gz).</p>
 
-<form enctype="multipart/form-data" action="{{url_for('report')}}" method="post">
+<form enctype="multipart/form-data" action="{{url_for('ili.report')}}" method="post">
 <p><i class="fa fa-file-archive-o"></i> FILE:<input type="file" name="file" required><input type="submit" value="Validate"></p>
 </form>
 
 
-<form action="{{url_for('report')}}" method="post">
+<form action="{{url_for('ili.report')}}" method="post">
 <p><i class="fa fa-cloud-upload"></i> URL: <input type="text" size=41 name="url" required><input type="submit" value="Validate"></p>
 </form>
 

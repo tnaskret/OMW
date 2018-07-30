@@ -59,6 +59,7 @@
 {%- macro form_tag(endpoint, fid='', css_class='', method='post') -%}
   <form action="{{ url_for(endpoint, **kwargs) }}" method="{{ method }}"
         id="{{ fid }}" class="{{ css_class }}" role="form">
+    {{ form.hidden_tag() }}
     {{ caller () }}
   </form>
 {%- endmacro -%}

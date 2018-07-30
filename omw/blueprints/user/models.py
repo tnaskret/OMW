@@ -43,3 +43,26 @@ class User(UserMixin):
         """ Return the md5 hash of the password+salt """
         salted_password = password + current_app.secret_key
         return md5(salted_password.encode('utf-8')).hexdigest()
+
+    def authenticated(self, with_password=True, password=''):
+        """
+        Ensure a user is authenticated, and optionally check their password.
+
+        :param with_password: Optionally check their password
+        :type with_password: bool
+        :param password: Optionally verify this as their password
+        :type password: str
+        :return: bool
+        """
+        if with_password:
+            return self.hash_pass(password) == self.password
+        return True
+
+    def is_active(self):
+        """
+        Return whether or not the user account is active, this satisfies
+        Flask-Login by overwriting the default value.
+
+        :return: bool
+        """
+        return True

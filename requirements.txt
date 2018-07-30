@@ -13,5 +13,9 @@ pytest==3.5.*
 pytest-cov==2.5.*
 flake8==3.5.*
 
+# Forms.
+Flask-WTF==0.9.5
+WTForms-Components==0.9.7
+
 # Extensions.
 Flask-Login==0.4.*

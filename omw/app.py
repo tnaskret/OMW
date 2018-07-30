@@ -1,6 +1,5 @@
 from flask import Flask, render_template, g, request, make_response, Response
 
-from flask_login import current_user
 from collections import OrderedDict as od
 
 from lib.common_sql import connect_admin, connect_omw, query_omw_direct, query_omw, fetch_allusers
@@ -8,19 +7,21 @@ from lib.common_sql import connect_admin, connect_omw, query_omw_direct, query_o
 from lib.omw_sql import f_rate_summary, fetch_ssrel, fetch_labels, fetch_src_for_ss_id, fetch_src_meta, \
     fetch_core, fetch_ili, fetch_ss_basic, fetch_langs, fetch_pos, f_ss_id_by_ili_id, fetch_sense, fetch_forms, \
     fetch_src_for_s_id, f_src_id_by_proj_ver, fetch_ss_id_by_src_orginalkey, fetch_src, dd, fetch_ssrel_stats, \
-    fetch_src_id_pos_stats, fetch_src_id_stats, fetch_kind, fetch_status, fetch_ili_status, fetch_proj
+    fetch_src_id_pos_stats, fetch_src_id_stats, fetch_ili_status, fetch_proj
 
-from lib.wn_syntax import licenses, uploadFile, validateFile
+from lib.wn_syntax import licenses
 
 from math import log
 
 from omw.blueprints.api import api
+from omw.blueprints.ili import ili
+from omw.blueprints.page.views import page
 from omw.blueprints.user import user
 from omw.blueprints.user.decorator import login_required
 from omw.blueprints.user.models import User
 from omw.extensions import (
-    login_manager
-)
+    login_manager,
+    csrf)
 
 
 def create_app(settings_override=None):
@@ -38,8 +39,11 @@ def create_app(settings_override=None):
     if settings_override:
         app.config.update(settings_override)
 
+    error_templates(app)
     app.register_blueprint(user)
     app.register_blueprint(api)
+    app.register_blueprint(page)
+    app.register_blueprint(ili)
     extensions(app)
     authentication(app)
 
@@ -57,13 +61,7 @@ def create_app(settings_override=None):
     ################################################################################
     # VIEWS
     ################################################################################
-    @app.route('/', methods=['GET', 'POST'])
-    def index():
-        return render_template('index.html')
 
-    @app.route('/ili', methods=['GET', 'POST'])
-    def ili_welcome(name=None):
-        return render_template('ili_welcome.html')
 
     @app.route('/omw', methods=['GET', 'POST'])
     def omw_welcome(name=None):
@@ -142,40 +140,6 @@ def create_app(settings_override=None):
         return render_template('concept-list.html', ili=ili,
                                rsumm=rsumm, up_who=up_who, down_who=down_who)
 
-    @app.route('/ili/concepts/<c>', methods=['GET', 'POST'])
-    def concepts_ili(c=None):
-        c = c.split(',')
-        ili, ili_defs = fetch_ili(c)
-        rsumm, up_who, down_who = f_rate_summary(list(ili.keys()))
-
-        return render_template('concept-list.html', ili=ili,
-                               rsumm=rsumm, up_who=up_who, down_who=down_who)
-
-    @app.route('/ili/search', methods=['GET', 'POST'])
-    @app.route('/ili/search/<q>', methods=['GET', 'POST'])
-    def search_ili(q=None):
-
-        if q:
-            query = q
-        else:
-            query = request.form['query']
-
-        src_id = fetch_src()
-        kind_id = fetch_kind()
-        status_id = fetch_status()
-
-        ili = dict()
-        for c in query_omw("""SELECT * FROM ili WHERE def GLOB ?
-                             """, [query]):
-            ili[c['id']] = (kind_id[c['kind_id']], c['def'],
-                            src_id[c['origin_src_id']], c['src_key'],
-                            status_id[c['status_id']], c['superseded_by_id'],
-                            c['t'])
-
-        rsumm, up_who, down_who = f_rate_summary(list(ili.keys()))
-        return render_template('concept-list.html', ili=ili,
-                               rsumm=rsumm, up_who=up_who, down_who=down_who)
-
     @app.route('/upload', methods=['GET', 'POST'])
     @login_required(role=0, group='open')
     def upload():
@@ -189,24 +153,6 @@ def create_app(settings_override=None):
     def join():
         return render_template('join.html')
 
-    @app.route('/ili/validation-report', methods=['GET', 'POST'])
-    @login_required(role=0, group='open')
-    def validation_report():
-
-        vr, filename, wn, wn_dtls = validateFile(current_user.id)
-
-        return render_template('validation-report.html',
-                               vr=vr, wn=wn, wn_dtls=wn_dtls,
-                               filename=filename)
-
-    @app.route('/ili/report', methods=['GET', 'POST'])
-    @login_required(role=0, group='open')
-    def report():
-        passed, filename = uploadFile(current_user.id)
-        return render_template('report.html',
-                               passed=passed,
-                               filename=filename)
-        # return render_template('report.html')
 
     @app.route('/omw/search', methods=['GET', 'POST'])
     @app.route('/omw/search/<lang>,<lang2>/<q>', methods=['GET', 'POST'])
@@ -438,6 +384,7 @@ def extensions(app):
     :param app: Flask application instance
     :return: None
     """
+    csrf.init_app(app)
     login_manager.init_app(app)
 
     return None
@@ -470,3 +417,31 @@ def authentication(app):
         flask request.
         """
         return User.get(userID)
+
+
+def error_templates(app):
+    """
+    Register 0 or more custom error pages (mutates the app passed in).
+
+    :param app: Flask application instance
+    :return: None
+    """
+
+    def render_status(status):
+        """
+         Render a custom template for a specific status.
+           Source: http://stackoverflow.com/a/30108946
+
+         :param status: Status as a written name
+         :type status: str
+         :return: None
+         """
+        # Get the status code from the status, default to a 500 so that we
+        # catch all types of errors and treat them as a 500.
+        code = getattr(status, 'code', 500)
+        return render_template('errors/{0}.html'.format(code)), code
+
+    for error in [404, 429, 500]:
+        app.errorhandler(error)(render_status)
+
+    return None

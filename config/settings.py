@@ -11,7 +11,7 @@ SECRET_KEY = '!$flhgSgngNO%$#SOET!$!'
 ILI_DTD = 'sql_scripts/WN-LMF.dtd'
 UPLOAD_FOLDER = 'public-uploads'
 ALLOWED_EXTENSIONS = set(['xml', 'gz', 'xml.gz'])
-
+WTF_CSRF_ENABLED = False
 
 OMW_DATABASE_FILE_NAME = 'omw.db'
 ADMIN_DATABASE_FILE_NAME = 'admin.db'

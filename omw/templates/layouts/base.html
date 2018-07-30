@@ -2,60 +2,76 @@
 
 <!DOCTYPE html>
 <html>
-  <head>
+<head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description"
           content="{% block meta_description %}{% endblock %}">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>{% block title %}{% endblock %}</title>
 
     <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='styles/vendor/bootstrap.min.css') }}">
+            rel="stylesheet"
+            href="{{ url_for('static', filename='styles/vendor/bootstrap.min.css') }}">
     <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='styles/vendor/font-awesome.min.css') }}">
+            rel="stylesheet"
+            href="{{ url_for('static', filename='styles/main.css') }}">
+    <link
+            rel="stylesheet"
+            href="{{ url_for('static', filename='styles/vendor/font-awesome.min.css') }}">
     <script
-      src="https://code.jquery.com/jquery-1.12.2.min.js"
-      integrity="sha256-lZFHibXzMHo3GGeehn1hudTAP3Sc0uKXBXAzHX1sjtk="
-      crossorigin="anonymous"></script>
-    <script src="https://js.stripe.com/v2/"></script>
+            src="https://code.jquery.com/jquery-1.12.2.min.js"
+            integrity="sha256-lZFHibXzMHo3GGeehn1hudTAP3Sc0uKXBXAzHX1sjtk="
+            crossorigin="anonymous"></script>
 
     {% if config['ANALYTICS_GOOGLE_UA'] %}
-      <script>
-        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-        })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+        <script>
+            (function (i, s, o, g, r, a, m) {
+                i['GoogleAnalyticsObject'] = r;
+                i[r] = i[r] || function () {
+                    (i[r].q = i[r].q || []).push(arguments)
+                }, i[r].l = 1 * new Date();
+                a = s.createElement(o),
+                    m = s.getElementsByTagName(o)[0];
+                a.async = 1;
+                a.src = g;
+                m.parentNode.insertBefore(a, m)
+            })(window, document, 'script', 'https://www.google-analytics.com/analytics.js', 'ga');
 
-        ga('create', "{{ config['ANALYTICS_GOOGLE_UA'] }}", 'auto');
-        ga('send', 'pageview');
-      </script>
+            ga('create', "{{ config['ANALYTICS_GOOGLE_UA'] }}", 'auto');
+            ga('send', 'pageview');
+        </script>
     {% endif %}
-  </head>
-  <body>
-    {% block header %}{% endblock %}
+</head>
+<body>
+{% block header %}{% endblock %}
 
-    <main class="container">
-      {{ flash.render() }}
+<main class="container">
+    {{ flash.render() }}
 
-      <div class="md-margin-top">{% block heading %}{% endblock %}</div>
-      {% block body %}{% endblock %}
-    </main>
+    <div class="md-margin-top">{% block heading %}{% endblock %}</div>
+    {% block body %}{% endblock %}
+</main>
 
-    <footer class="footer text-center">
-      <div class="container">
+<footer class="footer text-center">
+    <div class="container">
         <ul class="list-inline">
-          <li class="text-muted">Global Wordnet &copy; 2018</li>
-          {% block footer %}{% endblock %}
+            <li class="text-muted">Global Wordnet &copy; 2018</li>
+            <li class="text-muted">This is the (currently experimental) web site for the Open Multilingual Wordnet
+                (<a href="https://github.com/globalwordnet/OMW" target="_blank" style="text-decoration: none; color:
+     black;">source <i class="fa fa-github"></i></a>)
+            </li>
+            <li class="text-muted">Questions, comments and kudos to <a href='mailto:bond@ieee.org'>Francis Bond</a> and Luís Morgado da Costa.</li>
+            <li class="text-muted">Many thanks to Piek Vossen, John McCrae and all who have commented and helped.</li>
+            {% block footer %}{% endblock %}
         </ul>
-      </div>
-    </footer>
+    </div>
+</footer>
 
-    <script
-      src="{{ url_for('static', filename='scripts/vendor/bootstrap.min.js') }}">
-    </script>
-  </body>
+<script
+        src="{{ url_for('static', filename='scripts/vendor/bootstrap.min.js') }}">
+</script>
+</body>
 </html>

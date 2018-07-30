@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
 <head>
-
+  <meta name="csrf-token" content="{{ csrf_token() }}">
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
 
@@ -42,7 +42,7 @@
 
      <div id="headerL">
 
-       <form method="POST" action="{{ url_for('search_ili') }}">
+     <form method="POST" action="{{ url_for('ili.search_ili') }}">
 	  <span style="display:inline-block; vertical-align:middle">
 	    <table style="padding:0;margin:0;font-size:85%;">
 	      <tr><td style="padding:0;border:none">Search ILI</td></tr>
@@ -51,7 +51,6 @@
 	  <span class='tooltip' title='This is a basic regular expression search function to search through ILI definitions (i.e. you can make use of * for wild cards, and other basic GLOB regular expressions).'><i class="fa fa-info-circle"></i></span>
        </form>
      </div>
-
 
      <div id="headerR">
      {% if not current_user.id %}
@@ -66,7 +65,7 @@
        <i class="fa fa-user-times" aria-hidden="true"></i></a>&nbsp;&nbsp;
 
      {% endif %}
-     <a href="{{ url_for('ili_welcome') }}">CILI</a>&nbsp;&nbsp;
+     <a href="{{ url_for('ili.ili_welcome') }}">CILI</a>&nbsp;&nbsp;
      <a href="{{ url_for('omw_welcome') }}">OMW</a>&nbsp;&nbsp;
      </div>
 
