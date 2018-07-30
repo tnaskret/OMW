@@ -55,14 +55,14 @@
 
      <div id="headerR">
      {% if not current_user.id %}
-     <a href="{{ url_for('login') }}" title="Login"><i class="fa fa-user" aria-hidden="true"></i></a>
+     <a href="{{ url_for('user.login') }}" title="Login"><i class="fa fa-user" aria-hidden="true"></i></a>
        &nbsp;&nbsp;
 
      {% else %}
      <span title="Logged in as: {{current_user.id}} ({{current_user.group}})" style="color:green">
        <i class="fa fa-user" aria-hidden="true"></i></span>&nbsp;&nbsp;
 
-     <a href="{{ url_for('logout') }}" style="color:FireBrick" title="Logout">
+     <a href="{{ url_for('user.logout') }}" style="color:FireBrick" title="Logout">
        <i class="fa fa-user-times" aria-hidden="true"></i></a>&nbsp;&nbsp;
 
      {% endif %}
